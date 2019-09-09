@@ -17,7 +17,7 @@ export async function customFetch(url: string, trials: number): Promise<string> 
 			break;
 		}
 		else if (i < trials - 1) {
-			console.warn(`${url}へのアクセス${i}回目失敗...`);
+			console.warn(`${url}へのアクセス${i + 1}回目失敗...`);
 			continue;
 		} else {
 			console.error(`${url}へのアクセスが失敗しました。`);
