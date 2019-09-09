@@ -1,9 +1,10 @@
 import extract from "./utils/StringExtractor";
 import { xml2js, ElementCompact, } from "xml-js";
-import { Entry, ImageUrl, Theme, Blog } from "./firestore/access";
+import { Blog } from "./firestore/access";
 import { customFetch } from "./utils/customFetch";
 import { parse } from "./utils/Parser";
 import { EntryListState } from "./ameba_blog/entrylist";
+import { ITheme, IEntry, IImageUrl } from "./firestore/interface";
 
 export async function executeScraping() {
 	const blogs = await Blog.getAllBlogs();
@@ -16,35 +17,37 @@ export async function executeScraping() {
 }
 
 async function scrapeBlog(blog: Blog) {
-	console.info(`[${blog.AmebaId}]のスクレイピングを実行します。`);
+	console.info(`[${blog.blogId}]のスクレイピングを実行します。`);
 
-	const content = await customFetch(blog.EntrylistUrl, 50);
+	const content = await customFetch(blog.entrylistUrl, 50);
 	const stateJson = parse(content).from("<script>window.INIT_DATA=").to("};", 1).build();
 	const entrylistState: EntryListState = JSON.parse(stateJson);
 	const entryMap = entrylistState.entryState.entryMap;
-	let lastCreatedDatetime = blog.LastEntryCreatedDatetime;
+	let lastCreatedDatetime = blog.lastEntryCreatedDatetime;
 
 	for (let entry_id in entryMap) {
 		const entryitem = entryMap[entry_id];
 
-		const theme: Theme = {
-			blog_id: blog.BlogId,
-			theme_id: entryitem.theme_id,
-			theme_name: entryitem.theme_name,
+		const theme: ITheme = {
+			themeId: String(entryitem.theme_id),
+			themeName: entryitem.theme_name,
+			unitId: blog.unitId,
+			blogId: blog.blogId,
 		}
 
-		const entry: Entry = {
-			blog_id: blog.BlogId,
-			entry_id: entryitem.entry_id,
-			entry_title: entryitem.entry_title,
-			entry_created_datetime: entryitem.entry_created_datetime,
-			theme_id: entryitem.theme_id,
+		const entry: IEntry = {
+			entryId: String(entryitem.entry_id),
+			entryTitle: entryitem.entry_title,
+			entryCreatedDatetime: entryitem.entry_created_datetime,
+			unitId: blog.unitId,
+			blogId: blog.blogId,
+			themeId: theme.themeId,
 		}
 
-		if (lastCreatedDatetime < entry.entry_created_datetime) lastCreatedDatetime = entry.entry_created_datetime;
+		if (lastCreatedDatetime < entry.entryCreatedDatetime) lastCreatedDatetime = entry.entryCreatedDatetime;
 
 		// 新規EntryのときのみImageUrlを取得する(アウトバウンドネットワーキングを抑えるため)
-		const imageurls = blog.isLatest(entry.entry_created_datetime) ? await getImageUrlsFromEntry(entry, blog.BlogUrl) : [];
+		const imageurls = blog.isNewEntryDatetime(entry.entryCreatedDatetime) ? await getImageUrlsFromEntry(entry, blog.blogUrl) : [];
 
 		blog.addEntry(entry, imageurls, theme);
 	}
@@ -52,9 +55,9 @@ async function scrapeBlog(blog: Blog) {
 	blog.setLastEntryCreatedDatetime(lastCreatedDatetime);
 }
 
-async function getImageUrlsFromEntry(entry: Entry, blogRootUrl: string): Promise<ImageUrl[]> {
-	const imageurls: ImageUrl[] = [];
-	const entryUrl = `${blogRootUrl}/entry-${entry.entry_id}.html`;
+async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promise<IImageUrl[]> {
+	const imageurls: IImageUrl[] = [];
+	const entryUrl = `${blogRootUrl}/entry-${entry.entryId}.html`;
 
 	console.info(`[${entryUrl}]の画像を取得します。`);
 
@@ -68,16 +71,18 @@ async function getImageUrlsFromEntry(entry: Entry, blogRootUrl: string): Promise
 		try {
 			const element = xml2js(html, { compact: true });
 			const elementCompact = element as ElementCompact;
-			console.log(elementCompact);
-			const image_id: number = Number(elementCompact.img._attributes["data-image-id"]);
-			const image_url = String(elementCompact.img._attributes["src"]);
+			const imageId = String(elementCompact.img._attributes["data-image-id"]);
+			const imageUrl = String(elementCompact.img._attributes["src"]);
 
 
 			imageurls.push({
-				blog_id: entry.blog_id,
-				entry_id: entry.entry_id,
-				image_id: image_id,
-				image_url: image_url,
+				imageurlId: imageId,
+				imageUrl: imageUrl,
+				unitId: entry.unitId,
+				blogId: entry.blogId,
+				themeId: entry.themeId,
+				entryId: entry.entryId,
+				entryCreatedDatetime: entry.entryCreatedDatetime,
 			})
 		} catch (error) {
 			// 目的のimgタグではないゴミが混入するので無視する
