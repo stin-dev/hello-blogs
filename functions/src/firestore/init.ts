@@ -1,12 +1,10 @@
-//import * as functions from 'firebase-functions';
 import * as admin from "firebase-admin";
 
 // debug
-const serviiceAccount = require("../../firestore_key.json");
-admin.initializeApp({ credential: admin.credential.cert(serviiceAccount) });
+//const serviiceAccount = require("../../firestore_key.json");
+//admin.initializeApp({ credential: admin.credential.cert(serviiceAccount) });
 
 // release
-//admin.initializeApp();
-
+admin.initializeApp();
 
 export const firestore = admin.firestore();
