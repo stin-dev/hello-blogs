@@ -42,17 +42,17 @@ class Parser {
 	}
 
 	build(): string {
-		let txt = this.content;
+		const txt = this.content;
 
-		let obj = {
+		const obj = {
 			from: this._from,
 			to: this._to,
 			index: this.index,
 		};
 
-		let keyword: { from?: number, to?: number } = {};
+		const keyword: { from?: number, to?: number } = {};
 
-		if (this.direction == "from") {
+		if (this.direction === "from") {
 			this.position = txt.indexOf(obj.from.text, obj.index);
 			keyword.from = this.position + obj.from.offset + obj.from.text.length;
 			keyword.to = txt.indexOf(obj.to.text, keyword.from + 1) + obj.to.offset;
@@ -67,11 +67,11 @@ class Parser {
 	}
 
 	iterate(): string[] {
-		var keywords = [];
-		var start = true;
+		const keywords = [];
+		let start = true;
 
-		while (start || this.last != this.position) {
-			var keyword = this.build();
+		while (start || this.last !== this.position) {
+			const keyword = this.build();
 
 			this.index = this.end;
 			keywords.push(keyword);

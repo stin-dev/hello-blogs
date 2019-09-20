@@ -9,10 +9,8 @@ import { ITheme, IEntry, IImageUrl } from "./firestore/interface";
 export async function executeScraping() {
 	const blogs = await Blog.getAllBlogs();
 
-	for (let i = 0; i < blogs.length; i++) {
-		const blog = blogs[i];
-
-		scrapeBlog(blog);
+	for (const blog of blogs) {
+		await scrapeBlog(blog);
 	}
 }
 
@@ -25,7 +23,7 @@ async function scrapeBlog(blog: Blog) {
 	const entryMap = entrylistState.entryState.entryMap;
 	let lastCreatedDatetime = blog.lastEntryCreatedDatetime;
 
-	for (let entry_id in entryMap) {
+	for (const entry_id in entryMap) {
 		const entryitem = entryMap[entry_id];
 
 		const theme: ITheme = {
@@ -49,10 +47,10 @@ async function scrapeBlog(blog: Blog) {
 		// 新規EntryのときのみImageUrlを取得する(アウトバウンドネットワーキングを抑えるため)
 		const imageurls = blog.isNewEntryDatetime(entry.entryCreatedDatetime) ? await getImageUrlsFromEntry(entry, blog.blogUrl) : [];
 
-		blog.addEntry(entry, imageurls, theme);
+		await blog.addEntry(entry, imageurls, theme);
 	}
 
-	blog.setLastEntryCreatedDatetime(lastCreatedDatetime);
+	await blog.setLastEntryCreatedDatetime(lastCreatedDatetime);
 }
 
 async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promise<IImageUrl[]> {
@@ -65,9 +63,7 @@ async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promis
 
 	const imghtmls = extract(content).target("PhotoSwipeImage").from("<img").to(">").iterate();
 
-	for (let i = 0; i < imghtmls.length; i++) {
-		const html = imghtmls[i];
-
+	for (const html of imghtmls) {
 		try {
 			const element = xml2js(html, { compact: true });
 			const elementCompact = element as ElementCompact;

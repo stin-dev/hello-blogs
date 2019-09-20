@@ -69,8 +69,7 @@ export class Blog implements IBlog {
 		await entryDocRef.set(entry);
 		await themeDocRef.set(theme);
 
-		for (let i = 0; i < imageurls.length; i++) {
-			const imageurl = imageurls[i];
+		for (const imageurl of imageurls) {
 			const imageurlDocRef = imageurlsCollRef.doc(imageurl.imageurlId);
 
 			await imageurlDocRef.set(imageurl);
