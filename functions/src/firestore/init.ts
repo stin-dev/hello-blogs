@@ -1,8 +1,8 @@
 import * as admin from "firebase-admin";
 
 // debug
-//const serviiceAccount = require("../../firestore_key.json");
-//admin.initializeApp({ credential: admin.credential.cert(serviiceAccount) });
+//const serviceAccount = require("../../firestore_key.json");
+//admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 // release
 admin.initializeApp();

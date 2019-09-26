@@ -16,8 +16,8 @@ export interface IBlog {
 	/** ブログタイトル。 */
 	blogTitle: string,
 
-	/** 下位のentriesの最終エントリー作成日時 */
-	lastEntryCreatedDatetime:string,
+	/** 先頭20件のEntryId配列  */
+	topEntryList:string[],
 }
 
 export interface ITheme {

@@ -5,7 +5,7 @@ export class Blog implements IBlog {
 	private blog_id: string;
 	private unit_id: string;
 	private blog_title: string;
-	private last_entry_created_datetime: string;
+	private top_entry_list: string[];
 
 	/**
 	 * このBlogが保存されているFirestoreのDocument参照。
@@ -15,7 +15,7 @@ export class Blog implements IBlog {
 	get blogId() { return this.blog_id }
 	get unitId() { return this.unit_id }
 	get blogTitle() { return this.blog_title }
-	get lastEntryCreatedDatetime() { return this.last_entry_created_datetime }
+	get topEntryList() { return this.top_entry_list }
 
 	/**
 	 * BlogのURL
@@ -31,14 +31,14 @@ export class Blog implements IBlog {
 		blogId: string,
 		unitId: string,
 		blogTitle: string,
+		topEntryList:string[],
 		documentRef: FirebaseFirestore.DocumentReference,
-		lastEntryCreatedDatetime?: string
 	) {
 		this.blog_id = blogId;
 		this.unit_id = unitId;
 		this.blog_title = blogTitle;
+		this.top_entry_list = topEntryList;
 		this.documentRef = documentRef;
-		this.last_entry_created_datetime = lastEntryCreatedDatetime ? lastEntryCreatedDatetime : "2000-01-01T00:00:00.000+09:00";
 	}
 
 	/**
@@ -51,14 +51,14 @@ export class Blog implements IBlog {
 	}
 
 	/**
-	 * BlogにEntryを追加する。引数`entry`の`entryCreatedDatetime`が`LastEntryCreatedDatetime`以降の場合は
+	 * BlogにEntryを追加する。引数`entry`の`entryId`が`topEntryList`に含まれない場合は
 	 * 引数のデータをfirestoreに追加してtrueを返す。そうでなければFirestoreにアクセスすることなくfalseを返す。
 	 * @param entry 
 	 * @param imageurls 
 	 * @param theme 
 	 */
 	async addEntry(entry: IEntry, imageurls: IImageUrl[], theme: ITheme): Promise<boolean> {
-		if (!this.isNewEntryDatetime(entry.entryCreatedDatetime)) return false;
+		if (!this.isNewEntry(entry.entryId)) return false;
 
 		console.info(`${entry.entryId} を新規Entryとして登録します。`);
 
@@ -78,17 +78,17 @@ export class Blog implements IBlog {
 		return true;
 	}
 
-	isNewEntryDatetime(entryCreatedDatetime: string): boolean {
-		return this.last_entry_created_datetime < entryCreatedDatetime;
+	isNewEntry(entryId: string): boolean {
+		return !this.topEntryList.includes(entryId);
 	}
 
 	/**
-	 * Blogの最終更新日時を更新する。
-	 * @param lastEntryCreatedDatetime 最終更新日時
+	 * Blogの先頭20件のEntryId配列を更新する。
+	 * @param topEntryList 先頭20件のEntryIdの配列
 	 */
-	async setLastEntryCreatedDatetime(lastEntryCreatedDatetime: string) {
+	async setTopEntryList(topEntryList: string[]) {
 		await this.documentRef.set({
-			lastEntryCreatedDatetime: lastEntryCreatedDatetime,
+			topEntryList: topEntryList,
 		}, { merge: true });
 	}
 
@@ -106,8 +106,8 @@ export class Blog implements IBlog {
 				blog.id,
 				data.unitId,
 				data.blogTitle,
+				data.topEntryList,
 				blog.ref,
-				data.lastEntryCreatedDatetime,
 			);
 		});
 	}
@@ -122,8 +122,8 @@ export class Blog implements IBlog {
 				blogDocRef.id,
 				data.unitId,
 				data.blogTitle,
+				data.topEntryList,
 				blogDocRef,
-				data.lastEntryCreatedDatetime,
 			);
 		} else {
 			return undefined;

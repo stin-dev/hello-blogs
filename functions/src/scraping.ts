@@ -21,7 +21,7 @@ async function scrapeBlog(blog: Blog) {
 	const stateJson = parse(content).from("<script>window.INIT_DATA=").to("};", 1).build();
 	const entrylistState: EntryListState = JSON.parse(stateJson);
 	const entryMap = entrylistState.entryState.entryMap;
-	let lastCreatedDatetime = blog.lastEntryCreatedDatetime;
+	const topEntryIds = Object.keys(entryMap);
 
 	for (const entry_id in entryMap) {
 		const entryitem = entryMap[entry_id];
@@ -42,15 +42,13 @@ async function scrapeBlog(blog: Blog) {
 			themeId: theme.themeId,
 		}
 
-		if (lastCreatedDatetime < entry.entryCreatedDatetime) lastCreatedDatetime = entry.entryCreatedDatetime;
-
 		// 新規EntryのときのみImageUrlを取得する(アウトバウンドネットワーキングを抑えるため)
-		const imageurls = blog.isNewEntryDatetime(entry.entryCreatedDatetime) ? await getImageUrlsFromEntry(entry, blog.blogUrl) : [];
+		const imageurls = blog.isNewEntry(entry.entryId) ? await getImageUrlsFromEntry(entry, blog.blogUrl) : [];
 
 		await blog.addEntry(entry, imageurls, theme);
 	}
 
-	await blog.setLastEntryCreatedDatetime(lastCreatedDatetime);
+	await blog.setTopEntryList(topEntryIds);
 }
 
 async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promise<IImageUrl[]> {
