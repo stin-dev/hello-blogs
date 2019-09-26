@@ -71,7 +71,7 @@ async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promis
 
 			imageurls.push({
 				imageurlId: imageId,
-				imageUrl: imageUrl,
+				imageUrl: imageUrl.slice(0, imageUrl.indexOf("?")),
 				unitId: entry.unitId,
 				blogId: entry.blogId,
 				themeId: entry.themeId,
