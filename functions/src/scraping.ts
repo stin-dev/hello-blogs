@@ -51,7 +51,7 @@ async function scrapeBlog(blog: Blog) {
 	await blog.setTopEntryList(topEntryIds);
 }
 
-async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promise<IImageUrl[]> {
+export async function getImageUrlsFromEntry(entry: IEntry, blogRootUrl: string): Promise<IImageUrl[]> {
 	const imageurls: IImageUrl[] = [];
 	const entryUrl = `${blogRootUrl}/entry-${entry.entryId}.html`;
 
