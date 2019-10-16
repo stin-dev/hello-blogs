@@ -75,6 +75,12 @@ export class Blog implements IBlog {
 			await imageurlDocRef.set(imageurl);
 		}
 
+		if(imageurls.length === 0) {
+			const entryWithoutImageRef = this.documentRef.collection("entriesWithoutImage").doc(entry.entryId);
+
+			await entryWithoutImageRef.set(entry);
+		}
+
 		return true;
 	}
 
